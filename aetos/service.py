@@ -29,6 +29,7 @@ def prepare_service(argv=None, config_files=None):
     oslo_i18n.enable_lazy()
     log.register_options(conf)
     defaults.set_cors_middleware_defaults()
+    defaults.set_tracing_middleware_defaults()
     policy_opts.set_defaults(conf, policy_file=os.path.abspath(
         os.path.join(os.path.dirname(__file__), "api", "policy.yaml")))
     from aetos import opts
