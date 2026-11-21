@@ -1,0 +1,9 @@
+---
+features:
+  - |
+    Add the ``/api/v1/query_range`` endpoint, Prometheus's range query. Like
+    ``/api/v1/query``, a request without the ``telemetry:query_range:all_projects``
+    policy has every selector in its query limited to the caller's project, so
+    a project member or reader can draw their own resources over time. Two new
+    policy rules control it: ``telemetry:query_range`` (a reader in the
+    project) and ``telemetry:query_range:all_projects`` (admin or service).
