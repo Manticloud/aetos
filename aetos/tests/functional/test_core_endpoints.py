@@ -78,6 +78,19 @@ class TestCoreEndpointsForbidden(base.TestCase):
         self.assertEqual(self.expected_fault_string,
                          result.json['error_message']['faultstring'])
 
+    def test_query_range(self):
+        params = {'query': 'ceilometer_image_size',
+                  'start': '2026-02-23T13:00:00+00:00',
+                  'end': '2026-02-23T14:00:00+00:00', 'step': '60s'}
+
+        result = self.get_json('/query_range', **params,
+                               headers=self.reader_auth_headers,
+                               status=self.expected_status_code)
+
+        self.assertEqual(self.expected_status_code, result.status_code)
+        self.assertEqual(self.expected_fault_string,
+                         result.json['error_message']['faultstring'])
+
     def test_series(self):
         match = 'ceilometer_image_size'
         params = {'match[]': match}
@@ -346,6 +359,63 @@ class TestCoreEndpointsAsUser(base.TestCase):
         rbac_init_mock.assert_called_once()
         self.assertEqual('some_other_label', rbac_init_mock.call_args.args[2])
 
+    def test_query_range(self):
+        self.CONF.set_override(
+            'project_label_name', 'some_other_label', group='prometheus')
+        expected_status_code = 200
+        returned_from_prometheus = {
+            "status": "success",
+            "data": {
+                "resultType": "matrix",
+                "result": [
+                    {
+                        "metric": {
+                            "__name__": "ceilometer_image_size",
+                            "some_other_label":
+                                "2dd8edd6c8c24f49bf04670534f6b357",
+                            },
+                        "values": [
+                            [1748273657.273, "21430272"],
+                            [1748273717.273, "21430272"]
+                            ]
+                        }
+                    ]
+                }
+            }
+
+        query_string = 'ceilometer_image_size'
+        modified_query_string = \
+            f'ceilometer_image_size{{some_other_label={self.project_id}}}'
+        params = {
+            'query': query_string,
+            'start': '2026-02-23T13:00:00+00:00',
+            'end': '2026-02-23T14:00:00+00:00',
+            'step': '60s',
+            'timeout': '200'
+        }
+        modified_params = dict(params, query=modified_query_string)
+
+        with (
+            mock.patch.object(prometheus_client.PrometheusAPIClient, '_get',
+                              return_value=returned_from_prometheus
+                              ) as get_mock,
+            mock.patch.object(rbac.PromQLRbac, 'modify_query',
+                              return_value=modified_query_string) as rbac_mock,
+            mock.patch.object(rbac.PromQLRbac, '__init__',
+                              return_value=None
+                              ) as rbac_init_mock
+            ):
+            result = self.get_json('/query_range', **params,
+                                   headers=self.reader_auth_headers,
+                                   status=expected_status_code)
+
+        self.assertEqual(returned_from_prometheus, result.json)
+        self.assertEqual(expected_status_code, result.status_code)
+        get_mock.assert_called_once_with('query_range', modified_params)
+        rbac_mock.assert_called_once_with(query_string)
+        rbac_init_mock.assert_called_once()
+        self.assertEqual('some_other_label', rbac_init_mock.call_args.args[2])
+
     def test_series(self):
         self.CONF.set_override(
             'project_label_name', 'some_other_label', group='prometheus')
@@ -573,6 +643,35 @@ class TestCoreEndpointsAsAdmin(base.TestCase):
         get_mock.assert_called_once_with('query', expected_params)
         rbac_mock.assert_not_called()
 
+    def test_query_range(self):
+        expected_status_code = 200
+        returned_from_prometheus = {
+            "status": "success",
+            "data": {"resultType": "matrix", "result": []}
+            }
+        params = {
+            'query': 'ceilometer_image_size',
+            'start': '2026-02-23T13:00:00+00:00',
+            'end': '2026-02-23T14:00:00+00:00',
+            'step': '60s'
+        }
+        expected_params = dict(params, timeout=None)
+
+        with (
+            mock.patch.object(prometheus_client.PrometheusAPIClient, '_get',
+                              return_value=returned_from_prometheus
+                              ) as get_mock,
+            mock.patch.object(rbac.PromQLRbac, 'modify_query') as rbac_mock
+            ):
+            result = self.get_json('/query_range', **params,
+                                   headers=self.admin_auth_headers,
+                                   status=expected_status_code)
+
+        self.assertEqual(returned_from_prometheus, result.json)
+        self.assertEqual(expected_status_code, result.status_code)
+        get_mock.assert_called_once_with('query_range', expected_params)
+        rbac_mock.assert_not_called()
+
     def test_series(self):
         expected_status_code = 200
         returned_from_prometheus = {
@@ -712,6 +811,19 @@ class CoreEndpointsErrorCommonTests:
     def test_query(self):
         with base.quiet_expected_exception():
             result = self.get_json('/query', query="some_query{l='lvalue'}",
+                                   headers=self.admin_auth_headers,
+                                   status=self.expected_status_code,
+                                   expect_errors=True)
+
+        self.assertEqual(self.expected_status_code, result.status_code)
+
+    def test_query_range(self):
+        with base.quiet_expected_exception():
+            result = self.get_json('/query_range',
+                                   query="some_query{l='lvalue'}",
+                                   start='2026-02-23T13:00:00+00:00',
+                                   end='2026-02-23T14:00:00+00:00',
+                                   step='60s',
                                    headers=self.admin_auth_headers,
                                    status=self.expected_status_code,
                                    expect_errors=True)

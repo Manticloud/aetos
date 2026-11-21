@@ -93,6 +93,31 @@ rules = [
         ],
     ),
     policy.DocumentedRuleDefault(
+        name="telemetry:query_range",
+        check_str=PROJECT_READER,
+        scope_types=['project'],
+        description='Prometheus query_range endpoint with tenancy enforced.',
+        operations=[
+            {
+                'path': '/api/v1/query_range',
+                'method': 'GET'
+            }
+        ],
+    ),
+    policy.DocumentedRuleDefault(
+        name="telemetry:query_range:all_projects",
+        check_str=PROJECT_ADMIN_OR_SERVICE,
+        scope_types=['project'],
+        description='Prometheus query_range endpoint without tenancy '
+                    'enforced.',
+        operations=[
+            {
+                'path': '/api/v1/query_range',
+                'method': 'GET'
+            }
+        ],
+    ),
+    policy.DocumentedRuleDefault(
         name="telemetry:label",
         check_str=PROJECT_READER,
         scope_types=['project'],

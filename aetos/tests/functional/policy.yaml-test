@@ -1,5 +1,7 @@
 "telemetry:query": "!"
 "telemetry:query:all_projects": "!"
+"telemetry:query_range": "!"
+"telemetry:query_range:all_projects": "!"
 "telemetry:label": "!"
 "telemetry:label:all_projects": "!"
 "telemetry:labels": "!"

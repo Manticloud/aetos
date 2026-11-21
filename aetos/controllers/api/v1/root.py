@@ -17,6 +17,7 @@ from aetos.controllers.api.v1.admin import root as admin_root
 from aetos.controllers.api.v1 import label
 from aetos.controllers.api.v1 import labels
 from aetos.controllers.api.v1 import query
+from aetos.controllers.api.v1 import query_range
 from aetos.controllers.api.v1 import series
 from aetos.controllers.api.v1 import status
 from aetos.controllers.api.v1 import targets
@@ -26,6 +27,7 @@ class V1Controller:
     """Version 1 API controller root."""
 
     query = query.QueryController()
+    query_range = query_range.QueryRangeController()
     series = series.SeriesController()
     labels = labels.LabelsController()
     label = label.LabelController()

@@ -18,6 +18,9 @@ Regular API
 .. rest-controller:: aetos.controllers.api.v1.query:QueryController
    :webprefix: /api/v1/query
 
+.. rest-controller:: aetos.controllers.api.v1.query_range:QueryRangeController
+   :webprefix: /api/v1/query_range
+
 .. rest-controller:: aetos.controllers.api.v1.series:SeriesController
    :webprefix: /api/v1/series
 
